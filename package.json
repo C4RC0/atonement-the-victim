@@ -1,0 +1,20 @@
+{
+    "devDependencies": {
+        "wapplr-cli": "^1.0.0"
+    },
+    "engines": {
+        "node": ">=12.0.0"
+    },
+    "private": true,
+    "scripts": {
+        "start": "wapplr-cli start packages/atonement-the-victim",
+        "build": "wapplr-cli build packages/atonement-the-victim"
+    },
+    "workspaces": [
+        "packages/*"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/C4RC0/atonement-the-victim.git"
+    }
+}

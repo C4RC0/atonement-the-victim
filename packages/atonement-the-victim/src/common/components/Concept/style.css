@@ -1,0 +1,115 @@
+:root {
+    --hatchet-color: #40565e;
+    --on-color: #ffa84c;
+    --table-color: #d88c5e;
+}
+
+.concept{
+    width: 100%;
+    max-width: 960px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 16px;
+}
+
+.title{
+    font-size: 56px;
+    font-weight: bold;
+}
+
+.hatchet {
+    color: var(--hatchet-color);
+}
+
+.on {
+    color: var(--on-color);
+}
+
+.table {
+    color: var(--table-color);
+}
+
+.subtitle {
+    font-size: 24px;
+}
+
+.section{
+    padding: 0 16px 0 16px;
+    margin: 16px 0 16px 0;
+}
+
+.sectionTitle{
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 16px;
+}
+
+.sectionContent{
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    overflow: hidden;
+}
+
+.sectionContent .column > div {
+    margin-bottom: 16px;
+}
+
+.column {
+    width: 100%;
+}
+
+
+.grayBgForPhoto {
+    background-color: #d3d7d8;
+}
+
+.photo {
+    width: 100%;
+    height: auto;
+    max-width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
+.howWasItMade {
+    width: 100%;
+    height: auto;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
+.previews {
+    width: 100%;
+    height: auto;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
+@media (max-width: 640px) {
+
+    .concept{
+        padding: 0;
+    }
+
+    .title{
+        font-size: 32px;
+    }
+
+    .subtitle {
+        font-size: 16px;
+    }
+
+    .sectionTitle{
+        font-size: 18px;
+    }
+
+    .photo {
+        max-width: 100%;
+    }
+
+}
+
