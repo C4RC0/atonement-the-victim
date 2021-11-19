@@ -11,7 +11,7 @@ This artwork is also part of a series in which I rework my previously painted oi
 
 1881 Mihaly Zichy - 319x150 canvas with oil.
 
-![The original](https://raw.githubusercontent.com/C4RC0/atonement-the-victim/master/packages/atonement-the-victim/src/common/components/Concept/photo.jpg)
+![The original](https://raw.githubusercontent.com/C4RC0/atonement-the-victim/master/packages/atonement-the-victim/src/common/components/Concept/original.jpg)
 
 ## The first reproduction
 
