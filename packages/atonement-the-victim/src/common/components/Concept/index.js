@@ -33,6 +33,8 @@ export default function Concept() {
                         <div>{"This artwork is also part of a series in which I rework my previously painted oil paintings with modern technology."}</div>
                     </div>
                 </div>
+            </div>
+            <div className={style.section}>
                 <div className={style.sectionTitle}>{"1881. The original"}</div>
                 <div className={style.sectionContent}>
                     <div className={style.column}>
@@ -42,6 +44,8 @@ export default function Concept() {
                         <img alt={"1881. The original, Mihaly Zichy - 319x150 canvas with oil."} className={style.photo} src={original}/>
                     </div>
                 </div>
+            </div>
+            <div className={style.section}>
                 <div className={style.sectionTitle}>{"2012. The first reproduction"}</div>
                 <div className={style.sectionContent}>
                     <div className={style.column}>

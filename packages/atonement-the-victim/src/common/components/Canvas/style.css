@@ -1,0 +1,54 @@
+.canvas {
+    --bg-color: #ffffff;
+}
+
+.canvas {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+}
+
+.canvas.fullscreen {}
+
+.canvas * {}
+
+.bg {
+    display: block;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    background-color: var(--bg-color);
+}
+
+.center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.compositionBg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    z-index: 1;
+    top: 0;
+    left: 0;
+}
+
+.composition {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    z-index: 2;
+    top: 0;
+    left: 0;
+}

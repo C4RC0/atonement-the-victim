@@ -1,0 +1,28 @@
+.menu{}
+
+.menu .collapseButtonLabel{}
+
+.menu .collapseIcon{}
+
+.menu .collapseContainer{}
+
+.menu .collapse{
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.menu .selectedMenu div, .menu .selectedMenu span {
+    font-weight: 500;
+}
+
+@media print {
+    .menu .collapseButtonLabel > span{
+        font-weight: 500;
+    }
+    .menu .collapseIcon{
+        visibility: hidden!important;
+    }
+    .menu .collapseContainer {
+        height: auto !important;
+        visibility: visible !important;
+    }
+}

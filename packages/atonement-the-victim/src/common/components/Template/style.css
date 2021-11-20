@@ -1,0 +1,300 @@
+/*page*/
+
+.fullscreen {}
+
+.transparentAppBar{}
+
+.root {
+    display: block;
+}
+
+.root .mainContainer {
+    display: flex;
+}
+
+.root .page {
+    display: block;
+    position: relative;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    max-width: 100vw;
+}
+
+.root.fullscreen > .mainContainer > main > .page {
+    min-height: 100vh;
+}
+
+.root .page > .pagePaddingTop{}
+
+.root.transparentAppBar .page > .pagePaddingTop{
+    display: none;
+}
+
+.root .page > .pageContent{
+    height: auto;
+    display: flex;
+    width: 100%;
+    position: relative;
+    padding: 16px;
+}
+
+.root.fullscreen > .mainContainer > main > .page > .pageContent {
+    min-height: calc(100vh - 96px);
+}
+
+.root .page > .pageContent.pageContentNoPadding {
+    padding: 0;
+}
+
+.root.fullscreen > .mainContainer > main > .page > .pageContent.pageContentNoPadding {
+    min-height: 100vh;
+}
+
+.root .content {
+    flex-grow: 1;
+    max-width: 100%;
+    position: relative;
+}
+
+.root .content.narrowAndOpen{}
+
+.root .content.narrowAndOpen .hideWhenNarrowDrawerOpen{
+    display: none;
+}
+
+.root .pagePaddingTop {
+    height: 64px;
+}
+
+/*header*/
+
+.root .appBar {}
+
+.root .appBarSticky {}
+
+.root.transparentAppBar .appBar{
+    background-color: transparent!important;
+}
+
+.root.transparentAppBar .appBarSticky, .root.narrow.drawerOpen.transparentAppBar .appBar{
+    background-color: var(--bg-color)!important;
+}
+
+.root .appBarPositionSticky {
+    position: sticky;
+    top: 0;
+    left: initial;
+    right: initial;
+}
+
+.root .menuButton {
+
+}
+
+.root .topMenu{
+    display: flex;
+}
+
+.root .toolbar {
+    height: 64px;
+}
+
+.root .logo {
+    width: 48px;
+    height: 48px;
+    margin-right: 12px;
+}
+
+.root .title{
+    width: 100%;
+}
+
+.root .cursorPointer {
+    cursor: pointer;
+}
+
+.root .avatar{
+    cursor: pointer;
+}
+
+/*Drawer*/
+
+.root .drawer {
+    width: 320px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.root .drawerNarrow {
+    position: absolute;
+    z-index: 1200;
+    height: 100%;
+    top: 64px;
+}
+
+.root .drawerOpen {
+    margin-left: 0;
+}
+
+.root .drawerClose {
+    margin-left: -320px;
+}
+
+.root .drawerContainer {
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 320px;
+    max-width: 100%;
+}
+
+.root .drawerFixed {
+    height: 0;
+}
+
+.root .drawerPaper {
+    overflow-x: hidden;
+    position: static;
+    width: 320px;
+    max-width: 100%;
+}
+
+.root .drawerPaperFixed {
+    position: fixed;
+    top: 64px;
+    height: calc(100% - 64px);
+}
+
+.root .drawerPaperAbsoluteWithStickyAppBar {
+    top: 64px;
+    height: calc(100% - 64px);
+    position: absolute;
+}
+
+.root .drawerNarrow .drawerPaperAbsoluteWithStickyAppBar {
+    top: 0;
+}
+
+.root .drawerLayer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    visibility: hidden;
+    background-color: #000000;
+}
+
+.root .drawerLayerShow {
+    opacity: 0.5;
+    visibility: visible;
+}
+
+/*footer*/
+
+.root .footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 0;
+}
+
+.root .footerOneColumn {
+    width: 100%;
+}
+
+.root .log {
+    display: block;
+    width: 100%;
+    height: 30px;
+    position: relative;
+    font-size: 11px;
+    overflow: hidden;
+}
+
+.root .copyright {
+    font-size: 12px;
+    margin: 12px;
+    text-align: center;
+    user-select: none;
+    font-weight: bold;
+}
+
+.root .footerLogo {
+    height: 36px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px;
+}
+
+
+.root :global .MuiAppBar-colorPrimary, .root :global .MuiPaper-root {
+    color: var(--font-color);
+    background-color: var(--bg-color);
+    background-image: none;
+}
+
+@media (prefers-color-scheme: dark) {
+
+    .root :global .MuiButton-containedSecondary, .root :global .MuiAvatar-root {
+        background-color: var(--secondary-bg);
+        color: var(--secondary-color);
+        background-image: none;
+    }
+
+}
+
+/*fix some global class for dark mode*/
+
+@media (prefers-color-scheme: dark) {
+
+    .root :global .MuiInputBase-colorPrimary,
+    .root :global .MuiListItemText-root,
+    .root :global .MuiListItemIcon-root,
+    .root :global .MuiTypography-root.MuiTypography-root {
+        color: var(--font-color);
+    }
+
+    .root :global .MuiFormLabel-colorPrimary, .root :global .MuiTypography-root.MuiTypography-subtitle1 {
+        color: var(--label-color);
+    }
+
+    .root :global .MuiOutlinedInput-notchedOutline, .root :global .MuiInputBase-colorPrimary:hover .MuiOutlinedInput-notchedOutline {
+        border-color: var(--border-color);
+    }
+
+    .root :global .MuiDrawer-paper, .root :global .MuiDivider-root{
+        border-color: var(--divider-color);
+    }
+
+    .root :global .MuiCard-root {
+        box-shadow: 0 2px 1px -1px rgba(255 255 255 / 20%), 0 1px 1px 0 rgba(255 255 255 / 14%), 0 1px 3px 0 rgba(255 255 255 / 12%);
+    }
+
+}
+
+@media print {
+    .root .drawer{
+        display: none!important;
+    }
+    .root .menuButton {
+        display: none!important;
+    }
+    .root .topMenu{
+        display: none!important;
+    }
+    .root * {
+        background-color: transparent!important;
+        color: #000000!important;
+        opacity: 1!important;
+    }
+    .root .page {
+        min-height: auto!important;
+    }
+    .root .pageContent {
+        min-height: auto!important;
+    }
+    .root .log {
+        display: none!important;
+    }
+}

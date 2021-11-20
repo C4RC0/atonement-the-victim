@@ -1,0 +1,81 @@
+@import "fonts.css";
+
+.app {
+    --bg-color: #ffffff;
+    --font-color: rgba(0, 0, 0, 0.87);
+    --border-color: rgba(0, 0, 0, 0.23);
+    --label-color:  rgba(0, 0, 0, 0.6);
+    --secondary-bg: #000000;
+    --secondary-color: #ffffff;
+    --divider-color: rgba(0, 0, 0, 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+
+    .app {
+        --bg-color: #303338;
+        --font-color: #ffffff;
+        --border-color: rgba(255, 255, 255, 0.23);
+        --label-color:  rgba(255, 255, 255, 0.6);
+        --secondary-bg: #ffffff;
+        --secondary-color: #000000;
+        --divider-color: rgba(255, 255, 255, 0.12);
+    }
+
+}
+
+@media print {
+
+    .app {
+        --bg-color: #ffffff;
+        --font-color: rgba(0, 0, 0, 0.87);
+        --border-color: rgba(0, 0, 0, 0.23);
+        --label-color:  rgba(0, 0, 0, 0.6);
+        --secondary-bg: #000000;
+        --secondary-color: #ffffff;
+        --divider-color: rgba(0, 0, 0, 0.12);
+    }
+
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    max-width: 100vw;
+    overflow-x: hidden;
+}
+
+.app {
+    font-size: 14px;
+    line-height: 1.42857143;
+    color: var(--font-color);
+    background-color: var(--bg-color);
+    max-width: 100vw;
+    display: block;
+    position: relative;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    z-index: 1;
+    height: 100%;
+}
+
+.app {
+    min-height: 100vh;
+}
+
+.app, .app * {
+    box-sizing: border-box;
+}
+
+.app > div {
+    max-height: 100%;
+    overflow-y: auto;
+}
+
+div.app > * {
+    font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.app a:visited, .app a {
+    color: inherit;
+}
