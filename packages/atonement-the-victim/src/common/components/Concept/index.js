@@ -60,7 +60,7 @@ export default function Concept() {
                 <div className={style.sectionTitle}>{"How was it made?"}</div>
                 <div className={style.sectionContent}>
                     <div className={style.column}>
-                        <div>{"I made this version in 3D with awesome Three Js library. In this interactive form, it is also valid as an independent artwork within the new-media-art genre."}</div>
+                        <div>{"I made this version in 3D with awesome Three Js library. In this interactive form, it is a valid and independent artwork within the new-media-art genre."}</div>
                         <div className={clsx(style.column, style.grayBgForPhoto)}>
                             <img alt={"How was it made?"} className={style.howWasItMade} src={howWasItMade}/>
                         </div>

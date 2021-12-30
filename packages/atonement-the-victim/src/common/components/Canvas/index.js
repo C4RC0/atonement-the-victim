@@ -15,15 +15,10 @@ if (typeof global !== "undefined") {
 
 import {OBJLoader} from "three/examples/jsm/loaders/OBJLoader.js";
 import {MTLLoader} from "three/examples/jsm/loaders/MTLLoader.js";
-import AmmoLib from "three/examples/js/libs/ammo.wasm.js";
-import { AmmoDebugDrawer, DefaultBufferSize } from "./AmmoDebugDrawer.js";
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
-import {LineMaterial} from "three/examples/jsm/lines/LineMaterial";
-import {LineGeometry} from "three/examples/jsm/lines/LineGeometry";
-import {LineSegments2} from "three/examples/jsm/lines/LineSegments2";
 import {Sky} from "three/examples/jsm/objects/Sky.js";
 
-import { SelectiveBloomEffect, BrightnessContrastEffect, EffectPass, EffectComposer, RenderPass, KernelSize, BlendFunction } from "postprocessing";
+import { SelectiveBloomEffect, EffectPass, EffectComposer, RenderPass, KernelSize, BlendFunction, BloomEffect, TextureEffect } from "postprocessing";
 
 const containers = {};
 
@@ -48,8 +43,6 @@ export default function Canvas(props) {
 
         containers[wapp.globals.WAPP].current = container.current;
 
-        let physicsWorld;
-        let transformAux1;
         let scene;
         let camera;
         let composer;
@@ -59,25 +52,9 @@ export default function Canvas(props) {
         let selectiveBloomEffect;
 
         let reqId = null;
-        const rigidBodies = [];
-        const gravityConstant = -9.8;
-        let collisionConfiguration;
-        let dispatcher;
-        let broadphase;
-        let solver;
-        let softBodySolver;
-        let Ammo = null;
-        const clock = new THREE.Clock();
-        let moveing = 0;
         let removeInputListeners;
-        let lightBulb;
-        let wireCylinder;
-        let debugGeometry;
-        let debugDrawer;
         let controls;
         let target;
-        let sunLightTargetP = -1;
-        let cameraP = -1
         let userCameraMoveing = false;
         let removeControlListeners;
         let enableOrbitControls = wapp.globals.DEV;
@@ -85,14 +62,16 @@ export default function Canvas(props) {
         let bgRenderer;
         let bgScene;
         let bgCamera;
-        let bgTarget;
         let bgComposer;
-        let sunLightTarget;
-        let sunLight;
 
-        async function initAmmo() {
-            Ammo = await AmmoLib();
-        }
+        const cloudParticles = [];
+        let cloudGeo;
+        let cloudMaterial;
+
+        let boxes;
+        let animInt;
+        const toggleTimeouts = {};
+        let runnings = [];
 
         function initBgGraphics() {
 
@@ -101,16 +80,9 @@ export default function Canvas(props) {
             bgScene = new THREE.Scene();
             bgScene.background = new THREE.Color( 0xe5693e );
 
-            bgScene.fog = new THREE.FogExp2( 0xe5693e, 0.0225 );
+            /*Camera, Renderer*/
 
             bgCamera = new THREE.PerspectiveCamera( 60, parentContainer.offsetWidth/parentContainer.offsetHeight, 0.01, 1000 );
-
-            bgCamera.position.z = 3.8;
-            bgCamera.position.y = 1.3;
-            bgCamera.position.x = -1.35;
-
-            bgCamera.lookAt(-1.6, 1.25, 2);
-            bgTarget = new THREE.Vector3(-1.6, 1.25, 2);
 
             bgRenderer = new THREE.WebGLRenderer({
                 antialias: true,
@@ -119,33 +91,100 @@ export default function Canvas(props) {
                 powerPreference: "high-performance",
                 stencil: false,
             });
+
             bgRenderer.setSize( parentContainer.offsetWidth, parentContainer.offsetHeight );
             bgRenderer.shadowMap.enabled = true;
             bgRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
             bgRenderer.toneMappingExposure = 0.6
             bgRenderer.toneMapping = THREE.ACESFilmicToneMapping;
 
-            const renderScene = new RenderPass( bgScene, bgCamera );
+            /*Lights*/
 
-            const brightnessContrastEffect = new EffectPass(bgCamera, new BrightnessContrastEffect({
-                blendFunction: BlendFunction.NORMAL,
-                kernelSize: KernelSize.MEDIUM,
-                brightness: 0.05,
-                contrast: 0.2
-            }));
+            const hemiLight = new THREE.HemisphereLight( 0x3d4044, 0x3d4044, 1.8 );
 
-            brightnessContrastEffect.renderToScreen = true;
+            const ambient = new THREE.AmbientLight(0x555555);
+
+            const directionalLight = new THREE.DirectionalLight(0xff8c19);
+            directionalLight.position.set(0,0,-1);
+
+            const orangeLight = new THREE.PointLight(0xcc6600,5,500,1.7);
+            orangeLight.position.set(-50,150,150);
+
+            const redLight = new THREE.PointLight(0xd8547e,10,500,1.7);
+            redLight.position.set(0,150,150);
+
+            const blueLight = new THREE.PointLight(0x3677ac,5,500,1.7);
+            blueLight.position.set(50,150,150);
+
+            /*Fog*/
+
+            bgScene.fog = new THREE.FogExp2(0x111116, 0.007);
+
+            //bgRenderer.setClearColor(bgScene.fog.color);
+
+            /*Clouds*/
+
+            let loader = new THREE.TextureLoader();
+
+            const clouds = new THREE.Object3D();
+            clouds.position.set(0,0,100);
+
+            loader.load("/assets/smoke.png", function(texture){
+                cloudGeo = new THREE.PlaneBufferGeometry(100,100);
+                cloudMaterial = new THREE.MeshLambertMaterial({
+                    map:texture,
+                    transparent: true
+                });
+
+                for(let p=0; p<50; p++) {
+                    let cloud = new THREE.Mesh(cloudGeo, cloudMaterial);
+                    cloud.position.set(
+                        (Math.random() * 200)-100,
+                        Math.random() * 100,
+                        Math.random() * 100
+                    );
+                    cloud.material.opacity = 0.55;
+                    cloud.rotation.z = Math.random()*2*Math.PI;
+                    cloud.rotation.y = Math.PI;
+                    cloudParticles.push(cloud);
+                    clouds.add(cloud);
+                }
+            });
+
+            loader.load("/assets/stars.jpg", function(texture){
+
+                const textureEffect = new TextureEffect({
+                    blendFunction: BlendFunction.COLOR_DODGE,
+                    texture: texture
+                });
+                textureEffect.blendMode.opacity.value = 0.2;
+
+                const bloomEffect = new BloomEffect({
+                    blendFunction: BlendFunction.COLOR_DODGE,
+                    kernelSize: KernelSize.SMALL,
+                    useLuminanceFilter: true,
+                    luminanceThreshold: 0.3,
+                    luminanceSmoothing: 0.75
+                });
+                bloomEffect.blendMode.opacity.value = 1.5;
+
+                const effectPass = new EffectPass(
+                    bgCamera,
+                    bloomEffect,
+                    textureEffect
+                );
+                effectPass.renderToScreen = true;
+
+                bgComposer.addPass(effectPass);
+
+            });
+
+            /*Background effect composer*/
+
             bgComposer = new EffectComposer( bgRenderer );
-            bgComposer.addPass( renderScene );
-            bgComposer.addPass( brightnessContrastEffect );
+            bgComposer.addPass(new RenderPass(bgScene, bgCamera));
 
-            const groundGeo = new THREE.PlaneGeometry( 10000, 10000 );
-            const groundMat = new THREE.MeshLambertMaterial( { color: 0xcb9779 } );
-
-            const ground = new THREE.Mesh( groundGeo, groundMat );
-            ground.position.y = -0.2;
-            ground.rotation.x = - Math.PI / 2;
-            ground.receiveShadow = true;
+            /*Sky*/
 
             const sky = new Sky();
             sky.scale.setScalar( 10000 );
@@ -158,30 +197,23 @@ export default function Canvas(props) {
             skyUniforms[ "mieDirectionalG" ].value = 0.8;
 
             const pmremGenerator = new THREE.PMREMGenerator( bgRenderer );
-            const phi = THREE.MathUtils.degToRad( 90 );
+            const phi = THREE.MathUtils.degToRad( 91 );
             const theta = THREE.MathUtils.degToRad( 20 );
             const sun = new THREE.Vector3();
             sun.setFromSphericalCoords( 1, phi, theta );
             sky.material.uniforms[ "sunPosition" ].value.copy( sun );
             bgScene.environment = pmremGenerator.fromScene( sky ).texture;
 
-            sunLightTarget = new THREE.Object3D();
-            sunLightTarget.position.set(10,2,-9);
+            /*Scene add*/
 
-            sunLight = new THREE.DirectionalLight(0xff3020, 8)
-            sunLight.position.set(-5,5,4);
-            sunLight.target = sunLightTarget;
-            sunLight.castShadow = true;
-            sunLight.shadow.camera.near = 0.01;
-            sunLight.shadow.camera.far = 200;
-
-            const hemiLight = new THREE.HemisphereLight( 0x3d4044, 0x3d4044, 1.8 );
-
-            bgScene.add( ground );
-            bgScene.add( sky );
-            bgScene.add( hemiLight );
-            bgScene.add( sunLightTarget );
-            bgScene.add( sunLight );
+            bgScene.add(hemiLight);
+            bgScene.add(ambient);
+            bgScene.add(directionalLight);
+            bgScene.add(orangeLight);
+            bgScene.add(redLight);
+            bgScene.add(blueLight);
+            bgScene.add(sky);
+            bgScene.add(clouds)
 
         }
 
@@ -193,11 +225,8 @@ export default function Canvas(props) {
 
             camera = new THREE.PerspectiveCamera( 60, parentContainer.offsetWidth/parentContainer.offsetHeight, 0.01, 1000 );
             window.camera = camera;
-            camera.layers.enable(1);
-            camera.layers.enable(2);
-            camera.layers.enable(3);
 
-            camera.position.z = 0.105;
+            camera.position.z = -1;
             camera.position.y = 1.86;
             camera.position.x = 0.05;
 
@@ -205,9 +234,6 @@ export default function Canvas(props) {
             camera.lookAt(target.x, target.y, target.z);
 
             raycaster = new THREE.Raycaster();
-            raycaster.layers.set(1);
-            raycaster.layers.enable(2);
-            raycaster.layers.enable(3);
 
             renderer = new THREE.WebGLRenderer({
                 antialias: true,
@@ -242,7 +268,18 @@ export default function Canvas(props) {
             composer.addPass( renderScene );
             composer.addPass( bloomEffect );
 
-            const groundY = 1.3;
+            /*Ground*/
+
+            const groundGeo = new THREE.PlaneGeometry( 5000, 2 );
+            const groundMat = new THREE.MeshLambertMaterial( { color: 0x6b6e66 } );
+
+            const ground = new THREE.Mesh( groundGeo, groundMat );
+            ground.position.y = 1;
+            ground.position.z = 1;
+            ground.rotation.x = - Math.PI / 2;
+            ground.receiveShadow = true;
+
+            const groundY = ground.position.y;
 
             const boxMaterialProps = {
                 roughness: 3,
@@ -250,16 +287,29 @@ export default function Canvas(props) {
                 metalness: 0.2
             }
 
+            /*Boxes*/
+
+            boxes = new THREE.Group();
+
             const boxGeometryProps = [100,100]
 
-            const box1 = new THREE.Mesh(
-                new THREE.BoxGeometry( 0.3, 0.15, 0.3, ...boxGeometryProps ),
+            const box0 = new THREE.Mesh(
+                new THREE.BoxGeometry( 0.14, 0.15, 0.15, ...boxGeometryProps ),
                 new THREE.MeshStandardMaterial( { color: 0xff474d, ...boxMaterialProps } )
             )
-            box1.position.set(0.375,groundY+0.15/2, 1)
+            box0.position.set(0.435,groundY+0.15/2, 0.925)
+            box0.receiveShadow = true;
+            box0.castShadow = true;
+            boxes.add(box0);
+
+            const box1 = new THREE.Mesh(
+                new THREE.BoxGeometry( 0.14, 0.15, 0.3, ...boxGeometryProps ),
+                new THREE.MeshStandardMaterial( { color: 0xff474d, ...boxMaterialProps } )
+            )
+            box1.position.set(0.295,groundY+0.15/2, 1)
             box1.receiveShadow = true;
             box1.castShadow = true;
-            box1.layers.set(3);
+            boxes.add(box1);
 
             const box2 = new THREE.Mesh(
                 new THREE.BoxGeometry( 0.25, 0.25, 0.25, ...boxGeometryProps ),
@@ -268,7 +318,7 @@ export default function Canvas(props) {
             box2.position.set(0.1,groundY+0.25/2, 1)
             box2.receiveShadow = true;
             box2.castShadow = true;
-            box2.layers.set(3);
+            boxes.add(box2)
 
             const box3 = new THREE.Mesh(
                 new THREE.BoxGeometry( 0.20, 0.18, 0.18, ...boxGeometryProps ),
@@ -277,7 +327,7 @@ export default function Canvas(props) {
             box3.position.set(-0.115,groundY+0.18/2, 1.05)
             box3.receiveShadow = true;
             box3.castShadow = true;
-            box3.layers.set(3);
+            boxes.add(box3)
 
             const box4 = new THREE.Mesh(
                 new THREE.BoxGeometry( 0.36, 0.4, 0.18, ...boxGeometryProps ),
@@ -286,7 +336,7 @@ export default function Canvas(props) {
             box4.position.set(-0.115-0.27,groundY+0.4/2, 1.05)
             box4.receiveShadow = true;
             box4.castShadow = true;
-            box4.layers.set(3);
+            boxes.add(box4)
 
             const box5 = new THREE.Mesh(
                 new THREE.BoxGeometry( 0.36, 0.18, 0.08, ...boxGeometryProps ),
@@ -295,7 +345,7 @@ export default function Canvas(props) {
             box5.position.set(-0.115-0.27,groundY+0.18/2, 0.92)
             box5.receiveShadow = true;
             box5.castShadow = true;
-            box5.layers.set(3);
+            boxes.add(box5)
 
             const box6 = new THREE.Mesh(
                 new THREE.BoxGeometry( 0.18, 0.3, 0.6, ...boxGeometryProps ),
@@ -304,16 +354,16 @@ export default function Canvas(props) {
             box6.position.set(-0.115,groundY+0.3/2, 1.44)
             box6.receiveShadow = true;
             box6.castShadow = true;
-            box6.layers.set(3);
+            boxes.add(box6)
 
             const box7 = new THREE.Mesh(
                 new THREE.BoxGeometry( 0.36, 0.2, 0.2, ...boxGeometryProps ),
                 new THREE.MeshStandardMaterial( { color: 0x28ddb7, ...boxMaterialProps } )
             )
-            box7.position.set(-0.28,groundY+0.28+0.18/2, 1.12)
+            box7.position.set(-0.28,groundY+0.28+0.18/2, 1)
             box7.receiveShadow = true;
             box7.castShadow = true;
-            box7.layers.set(3);
+            boxes.add(box7)
 
             const box8 = new THREE.Mesh(
                 new THREE.BoxGeometry( 0.14, 0.14, 0.26, ...boxGeometryProps ),
@@ -322,128 +372,60 @@ export default function Canvas(props) {
             box8.position.set(-0.38,(groundY+0.28+0.18/2+0.2/2)+0.14/2, 1.12)
             box8.receiveShadow = true;
             box8.castShadow = true;
-            box8.layers.set(3);
+            boxes.add(box8)
+
+
+            let body;
+
+            new MTLLoader().setMaterialOptions({side: THREE.DoubleSide}).load( "./assets/obj/body.mtl", function ( materials ) {
+
+                materials.preload();
+
+                new OBJLoader()
+                    .setMaterials( materials )
+                    .load("./assets/obj/body.obj", function ( object ) {
+
+                            body = object;
+                            body.scale.x = 0.8;
+                            body.scale.y = 0.8;
+                            body.scale.z = 0.8;
+                            body.position.y = 1.1;
+                            body.position.x = 0.8;
+                            body.position.z = 1.1;
+
+                            body.rotation.set(-Math.PI / 8, Math.PI / 2, 0);
+                            body.castShadow = true;
+                            body.receiveShadow = true;
+
+                            body.traverse(function(child){child.castShadow = true;})
+
+                            scene.add(body);
+
+                        },
+                        function ( xhr ) {},
+                        function ( error ) {
+                            console.log(error)
+                        }
+                    );
+
+            } );
 
             const spotLight = new THREE.SpotLight(0xffffff, 1);
             spotLight.shadow.camera.near = 0.01;
             spotLight.shadow.camera.far = 10;
             spotLight.lookAt(0,0,0);
             spotLight.castShadow = true;
-            spotLight.layers.set(1);
             spotLight.position.set(-1, 3, 0);
             spotLight.lookAt(0,0,0);
             spotLight.shadow.mapSize.width = 4096;
             spotLight.shadow.mapSize.height = 4096;
 
-            const bulb = new THREE.Mesh(
-                new THREE.SphereGeometry( 0.04, 16, 16 ),
-                new THREE.MeshBasicMaterial( { color: 0xefab93, transparent: true, opacity: 0.8 } )
-            )
-            bulb.layers.set(3);
-
-            const light = new THREE.PointLight(0x3d4044, 1);
-            light.shadow.camera.near = 0.01;
-            light.shadow.camera.far = 1.5;
-            light.lookAt(0,0,0);
-            light.castShadow = true;
-            light.layers.set(1);
-
-            const socketGeometry = new THREE.CylinderGeometry( 0.02, 0.02, 0.05, 32 );
-            const socketMaterial = new THREE.MeshBasicMaterial( {color: 0x000000} );
-            const socketCylinder = new THREE.Mesh( socketGeometry, socketMaterial );
-            socketCylinder.position.set(0,0.04 + 0.05/2,0);
-            socketCylinder.layers.set(1);
-
-            const socketCapGeometry = new THREE.CylinderGeometry( 0.001, 0.021, 0.02, 32 );
-            const socketCapMaterial = new THREE.MeshBasicMaterial( {color: 0x000000} );
-            const socketCapCylinder = new THREE.Mesh( socketCapGeometry, socketCapMaterial );
-            socketCapCylinder.position.set(0,0.04 + 0.05+(0.02/2),0);
-            socketCapCylinder.layers.set(1);
-
-            lightBulb = new THREE.Group();
-            lightBulb.add(socketCylinder, socketCapCylinder, bulb, light);
-            lightBulb.position.set(-1.5,1.35,2.6)
-            lightBulb.layers.set(1);
-
-            const lightBulbShape = new Ammo.btSphereShape( 0.04/2 );
-            lightBulbShape.setMargin( 0.01 );
-            createRigidBody( lightBulb, lightBulbShape, 0.1, lightBulb.position, lightBulb.quaternion );
-            lightBulb.userData.physicsBody.setFriction( 0.5 );
-
-            const blanketGeometry = new THREE.BoxGeometry( 0.5, 0.05, 0.5 );
-            const blanketMaterial = new THREE.MeshStandardMaterial( {color: 0x1d3932, side: THREE.DoubleSide,} );
-            const blanket = new THREE.Mesh( blanketGeometry, blanketMaterial );
-            blanket.castShadow = true;
-            blanket.rotation.set(Math.PI / -2, 0, 0);
-            blanket.position.y = 4.5;
-            blanket.position.x = lightBulb.position.x;
-            blanket.position.z = lightBulb.position.z;
-            const blanketShape = new Ammo.btBoxShape( new Ammo.btVector3( 0.5 * 0.5, 0.05 * 0.5, 0.5 * 0.5 ) );
-            blanketShape.setMargin( 0.01 );
-            createRigidBody( blanket, blanketShape, 0, blanket.position, new THREE.Quaternion(0, 0, 0, 1) );
-            blanket.layers.set(1);
-
-            const wireStartY = lightBulb.position.y + 0.07;
-            const wireHeight = 4.5-wireStartY;
-            const wireNumSegments = Math.floor(wireHeight/0.1);
-            const segmentLength = wireHeight / wireNumSegments;
-            const wirePos = lightBulb.position.clone();
-            wirePos.y = wireStartY;
-
-            const wirePositions = [];
-            for ( let i = 0; i < wireNumSegments + 1; i ++ ) {
-                wirePositions.push( wirePos.x, wirePos.y + i * segmentLength, wirePos.z );
-            }
-
-            const wireGeometry = new LineGeometry();
-            wireGeometry.setPositions( wirePositions );
-
-            const wireMaterial = new LineMaterial( {
-                color: 0xffffff,
-                linewidth: 0.01,
-                vertexColors: true,
-                dashed: false,
-                alphaToCoverage: true,
-                worldUnits: true
-            } );
-
-            wireCylinder = new LineSegments2( wireGeometry, wireMaterial );
-            wireCylinder.castShadow = true;
-            wireCylinder.receiveShadow = true;
-
-            const softBodyHelpers = new Ammo.btSoftBodyHelpers();
-            const wireStart = new Ammo.btVector3( wirePos.x, wirePos.y, wirePos.z );
-            const wireEnd = new Ammo.btVector3( wirePos.x, wirePos.y + wireHeight, wirePos.z );
-            const wireSoftBody = softBodyHelpers.CreateRope( physicsWorld.getWorldInfo(), wireStart, wireEnd, wireNumSegments - 1, 0 );
-            const sbConfig = wireSoftBody.get_m_cfg();
-            sbConfig.set_viterations( 100 );
-            sbConfig.set_piterations( 100 );
-            wireSoftBody.setTotalMass( 0.1, false );
-            Ammo.castObject( wireSoftBody, Ammo.btCollisionObject ).getCollisionShape().setMargin( 0.01 * 3 );
-            physicsWorld.addSoftBody( wireSoftBody, 1, - 1 );
-            wireCylinder.userData.physicsBody = wireSoftBody;
-            wireSoftBody.setActivationState( 4 );
-
-            wireSoftBody.appendAnchor( 0, lightBulb.userData.physicsBody, true, 1 );
-            wireSoftBody.appendAnchor( wireNumSegments, blanket.userData.physicsBody, true, 1 );
-
             const hemiLight = new THREE.HemisphereLight( 0xddeeff, 0x0f0e0d, 0.5 );
-            hemiLight.layers.set(3);
 
-            scene.add( hemiLight );
-            scene.add( lightBulb );
-            scene.add( wireCylinder );
-            scene.add( blanket );
-
-            scene.add(box1);
-            scene.add(box2);
-            scene.add(box3);
-            scene.add(box4);
-            scene.add(box5);
-            scene.add(box6);
-            scene.add(box7);
-            scene.add(box8);
+            scene.add(hemiLight);
             scene.add(spotLight);
+            scene.add(ground);
+            scene.add(boxes);
 
         }
 
@@ -455,13 +437,13 @@ export default function Canvas(props) {
                 controls.target = target;
                 controls.update();
 
-                /*controls.enableZoom = false;
+                controls.enableZoom = false;
                 controls.enablePan = false;
                 controls.enableDamping = false;
                 controls.minPolarAngle = Math.PI/2-0.5;
                 controls.maxPolarAngle = Math.PI/2+0.1;
-                controls.minAzimuthAngle = camera.rotation.y-0.5;
-                controls.maxAzimuthAngle = camera.rotation.y+0.5;*/
+                controls.minAzimuthAngle = camera.rotation.y-4;
+                controls.maxAzimuthAngle = camera.rotation.y-2;
 
                 let wait;
                 const start = function () {
@@ -489,108 +471,39 @@ export default function Canvas(props) {
             }
         }
 
-        function initDebugAmmo() {
+        function glow(object) {
+            if (object) {
+                const isActive = object.userData.isActive;
+                if (isActive) {
+                    if (object.userData.tempMaterial) {
+                        object.material = object.userData.tempMaterial;
+                    }
+                    object.userData.isActive = false;
+                } else {
+                    let color = 0x28ddb7;
+                    if (!object.userData.tempMaterial) {
+                        object.userData.tempMaterial = object.material;
+                    }
+                    if (object.userData.tempMaterial?.color) {
+                        color = object.userData.tempMaterial.color;
+                    }
+                    object.material = new THREE.MeshBasicMaterial({color, transparent: true, opacity: 0.9});
+                    object.userData.isActive = true;
+                }
 
-            const debugVertices = new Float32Array(DefaultBufferSize);
-            const debugColors = new Float32Array(DefaultBufferSize);
-            debugGeometry = new THREE.BufferGeometry();
-            debugGeometry.addAttribute("position", new THREE.BufferAttribute(debugVertices, 3).setDynamic(true));
-            debugGeometry.addAttribute("color", new THREE.BufferAttribute(debugColors, 3).setDynamic(true));
-            const debugMaterial = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors });
-            const debugMesh = new THREE.LineSegments(debugGeometry, debugMaterial);
-            debugMesh.frustumCulled = false;
-            scene.add(debugMesh);
-            debugDrawer = new AmmoDebugDrawer(null, debugVertices, debugColors, physicsWorld);
-            debugDrawer.enable();
+                const selection = selectiveBloomEffect.selection;
 
-            setInterval(() => {
-                const mode = (debugDrawer.getDebugMode() + 1) % 3;
-                debugDrawer.setDebugMode(mode);
-            }, 1000);
-
-        }
-
-        function initPhysics(){
-            collisionConfiguration = new Ammo.btSoftBodyRigidBodyCollisionConfiguration();
-            dispatcher = new Ammo.btCollisionDispatcher( collisionConfiguration );
-            broadphase = new Ammo.btDbvtBroadphase();
-            solver = new Ammo.btSequentialImpulseConstraintSolver();
-            softBodySolver = new Ammo.btDefaultSoftBodySolver();
-            physicsWorld = new Ammo.btSoftRigidDynamicsWorld( dispatcher, broadphase, solver, collisionConfiguration, softBodySolver );
-            physicsWorld.setGravity( new Ammo.btVector3( 0, gravityConstant, 0 ) );
-            physicsWorld.getWorldInfo().set_m_gravity( new Ammo.btVector3( 0, gravityConstant, 0 ) );
-            transformAux1 = new Ammo.btTransform();
-        }
-
-        function createRigidBody( threeObject, physicsShape, mass, pos, quat ) {
-
-            threeObject.position.copy( pos );
-            threeObject.quaternion.copy( quat );
-
-            const transform = new Ammo.btTransform();
-            transform.setIdentity();
-            transform.setOrigin( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
-            transform.setRotation( new Ammo.btQuaternion( quat.x, quat.y, quat.z, quat.w ) );
-            const motionState = new Ammo.btDefaultMotionState( transform );
-
-            const localInertia = new Ammo.btVector3( 0, 0, 0 );
-            physicsShape.calculateLocalInertia( mass, localInertia );
-
-            const rbInfo = new Ammo.btRigidBodyConstructionInfo( mass, motionState, physicsShape, localInertia );
-            const body = new Ammo.btRigidBody( rbInfo );
-
-            threeObject.userData.physicsBody = body;
-
-            if ( mass > 0 ) {
-                rigidBodies.push( threeObject );
-                body.setActivationState( 4 );
-            }
-
-            physicsWorld.addRigidBody( body );
-
-        }
-
-        function updatePhysics( deltaTime ) {
-
-            physicsWorld.stepSimulation( deltaTime, 10 );
-
-            if (debugDrawer) {
-                physicsWorld.debugDrawWorld();
-            }
-
-            const softBody = wireCylinder.userData.physicsBody;
-            const wirePositions = wireCylinder.geometry.attributes.position.array;
-            const numVerts = wirePositions.length / 3;
-            const nodes = softBody.get_m_nodes();
-            const positions = [];
-
-            for ( let i = 0; i < numVerts; i ++ ) {
-                const node = nodes.at( i );
-                const nodePos = node.get_m_x();
-                positions.push(nodePos.x(), nodePos.y(), nodePos.z())
-            }
-
-            wireCylinder.geometry.setPositions(positions);
-
-            wireCylinder.geometry.attributes.position.needsUpdate = true;
-
-            for ( let i = 0, il = rigidBodies.length; i < il; i ++ ) {
-
-                const objThree = rigidBodies[ i ];
-                const objPhys = objThree.userData.physicsBody;
-                const ms = objPhys.getMotionState();
-                if ( ms ) {
-
-                    ms.getWorldTransform( transformAux1 );
-                    const p = transformAux1.getOrigin();
-                    const q = transformAux1.getRotation();
-                    objThree.position.set( p.x(), p.y(), p.z() );
-                    objThree.quaternion.set( q.x(), q.y(), q.z(), q.w() );
-
+                if (object.userData.isActive) {
+                    if (!selection.has(object)) {
+                        selection.add(object);
+                    }
+                } else {
+                    if (selection.has(object)) {
+                        selection.delete(object);
+                    }
                 }
 
             }
-
         }
 
         function initInput() {
@@ -602,41 +515,10 @@ export default function Canvas(props) {
                     pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
                     pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
                     raycaster.setFromCamera(pointer, camera);
-                    const intersects = raycaster.intersectObjects(scene.children, false);
+                    const intersects = raycaster.intersectObjects(boxes.children, true);
                     const object = intersects[0]?.object;
 
-                    if (object) {
-                        const isActive = object.userData.isActive;
-                        if (isActive) {
-                            if (object.userData.tempMaterial) {
-                                object.material = object.userData.tempMaterial;
-                            }
-                            object.userData.isActive = false;
-                        } else {
-                            let color = 0x28ddb7;
-                            if (!object.userData.tempMaterial) {
-                                object.userData.tempMaterial = object.material;
-                            }
-                            if (object.userData.tempMaterial?.color) {
-                                color = object.userData.tempMaterial.color;
-                            }
-                            object.material = new THREE.MeshBasicMaterial({color, transparent: true, opacity: 0.9});
-                            object.userData.isActive = true;
-                        }
-
-                        const selection = selectiveBloomEffect.selection;
-
-                        if(object.userData.isActive) {
-                            if (!selection.has(object)) {
-                                selection.add(object);
-                            }
-                        } else {
-                            if (selection.has(object)) {
-                                selection.delete(object);
-                            }
-                        }
-
-                    }
+                    glow(object)
                 }
             };
 
@@ -670,34 +552,72 @@ export default function Canvas(props) {
             }
         }
 
-        function sunLightAnim() {
-            sunLight.position.y = sunLight.position.y  + (0.05*sunLightTargetP);
-            if (sunLight.position.y < 2){
-                sunLightTargetP = 1;
-                sunLight.position.y = 2;
-            } else if (sunLight.position.y > 5){
-                sunLightTargetP = -1;
-                sunLight.position.y = 5;
-            }
-        }
+        function initAnim() {
 
-        function cameraAnim() {
-            if (!userCameraMoveing) {
-                camera.position.y = camera.position.y + (0.01 * cameraP);
-                if (camera.position.y < 1.2) {
-                    cameraP = 1;
-                    camera.position.y = 1.2;
+            const totalTime = 5000;
+            const toggleTime = (totalTime/2)/boxes.children.length;
 
-                    let physicsBody = lightBulb.userData.physicsBody;
-                    let resultantImpulse = new Ammo.btVector3( 0.01, 0, 0.00001 );
-                    resultantImpulse.op_mul(20);
-                    physicsBody.setLinearVelocity( resultantImpulse );
-
-                } else if (camera.position.y > 1.8) {
-                    cameraP = -1;
-                    camera.position.y = 1.8;
+            function toggleAndAgain(key, wait) {
+                const object = boxes.children[key];
+                if (object){
+                    glow(object)
+                    if (toggleTimeouts[key]){
+                        clearTimeout(toggleTimeouts[key]);
+                    }
+                    toggleTimeouts[key] = setTimeout(()=>glow(object), wait)
                 }
             }
+
+            async function runAll(keys, run, wait, runAllEnd, m){
+
+                if (runnings.length){
+                    runnings.forEach((runningObject)=>{
+                        runningObject.stop = true;
+                    })
+                }
+
+                runnings.push(m);
+
+                let i = 0;
+                async function next(m) {
+                    const key = keys[i];
+                    if (typeof key !== "undefined" && !m?.stop){
+                        await run(key, wait);
+                        i = i + 1;
+                        await new Promise((resolve)=>{setTimeout(resolve, wait)})
+                        await next(m);
+                    } else {
+                        await Promise.all(keys.map(async (key)=>{
+                            return await runAllEnd(key)
+                        }))
+                        m.stop = true;
+                        runnings.splice(runnings.indexOf(m));
+                    }
+                }
+                await next(m);
+            }
+
+            async function shuffleAndRun() {
+                const keys = Array.from({length: boxes.children.length}, (v, i) => i);
+
+                for (let i = keys.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [keys[i], keys[j]] = [keys[j], keys[i]];
+                }
+
+                await runAll(keys, toggleAndAgain, toggleTime, (key)=>toggleAndAgain(key, toggleTime*2), {})
+            }
+
+            if (animInt){
+                clearInterval(animInt);
+            }
+
+            animInt = setInterval(async ()=>{
+                await shuffleAndRun();
+            }, totalTime)
+
+            shuffleAndRun();
+
         }
 
         const render = function () {
@@ -706,52 +626,30 @@ export default function Canvas(props) {
             }
             reqId = requestAnimationFrame( render );
 
-            if (moveing){
-                let physicsBody = lightBulb.userData.physicsBody;
-                let resultantImpulse = new Ammo.btVector3( 0.01 * moveing, 0, 0.00001 );
-                resultantImpulse.op_mul(20);
-                physicsBody.setLinearVelocity( resultantImpulse );
-            }
-
-            //cameraAnim();
-
             if (controls) {
                 controls.update();
             }
 
-            //sunLightAnim();
-
             bgCamera.rotation.set(camera.rotation.x, camera.rotation.y, camera.rotation.z);
             bgCamera.position.set(camera.position.x, camera.position.y, camera.position.z);
 
-            bgComposer.render();
+            cloudParticles.forEach(p => {
+                p.rotation.z -=0.1;
+            });
 
-            renderer.clear();
+            bgComposer.render(0.1);
 
-            const parentContainer = containers[wapp.globals.WAPP].current || typeof window !== "undefined" && window;
-            wireCylinder.material.resolution.set( parentContainer.offsetWidth, parentContainer.offsetHeight );
-
-            const deltaTime = clock.getDelta();
-            updatePhysics(deltaTime);
-
-            camera.layers.set(0);
-            camera.layers.enable(1);
-            camera.layers.enable(3);
             composer.render();
-
-            //renderer.render(scene, camera);
 
         };
 
-        async function init() {
-            await initAmmo();
-            initPhysics();
+        function init() {
             initBgGraphics();
             initGraphics();
-            //initDebugAmmo();
             initControls();
             render();
             initInput();
+            initAnim();
         }
 
         init();
@@ -806,6 +704,9 @@ export default function Canvas(props) {
             }
             if (reqId) {
                 cancelAnimationFrame(reqId);
+                if (animInt){
+                    clearInterval(animInt);
+                }
             }
         }
 
