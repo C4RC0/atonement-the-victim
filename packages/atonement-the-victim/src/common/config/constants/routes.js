@@ -5,7 +5,7 @@ const routes = {
     behanceUrl: "https://www.behance.net/gallery/134069277/Atonement-%28The-Victim%29",
     videoRoute: "/video",
     recordRoute: "/record",
-    nftUrl: "https://foundation.app/@C4RC0/95477"
+    nftUrl: "https://foundation.app/@C4RC0"
 };
 
 export default routes;
