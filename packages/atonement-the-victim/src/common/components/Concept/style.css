@@ -1,7 +1,7 @@
 :root {
-    --hatchet-color: #40565e;
-    --on-color: #ffa84c;
-    --table-color: #d88c5e;
+    --atonement-color: #40565e;
+    --the-color: #f18a2b;
+    --victim-color: #aa2f32;
 }
 
 .concept{
@@ -17,16 +17,16 @@
     font-weight: bold;
 }
 
-.hatchet {
-    color: var(--hatchet-color);
+.atonement {
+    color: var(--atonement-color);
 }
 
-.on {
-    color: var(--on-color);
+.the {
+    color: var(--the-color);
 }
 
-.table {
-    color: var(--table-color);
+.victim {
+    color: var(--victim-color);
 }
 
 .subtitle {

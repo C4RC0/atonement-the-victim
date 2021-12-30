@@ -18,9 +18,9 @@ export default function Concept() {
         <div className={style.concept}>
             <div className={style.section}>
                 <div className={style.title}>
-                    <span className={style.hatchet}>{"Atonement "}</span>
-                    <span className={style.on}>{"The "}</span>
-                    <span className={style.table}>{"Victim"}</span>
+                    <span className={style.atonement}>{"Atonement "}</span>
+                    <span className={style.the}>{"The "}</span>
+                    <span className={style.victim}>{"Victim"}</span>
                 </div>
                 <div className={style.subtitle}>
                     {"A new-media-art website for the 3D reproduction of the 'Atonement (The Victim)' painting"}
