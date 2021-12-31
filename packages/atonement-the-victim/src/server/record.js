@@ -22,12 +22,14 @@ async function screenCaptureChromium(p = {}) {
     } = p;
 
     const browser = await puppeteer.launch({
+        headless: true,
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
             "--ignore-certificate-errors",
             "--ignore-certificate-errors-spki-list",
-            "--use-cmd-decoder=passthrough"
+            "--use-cmd-decoder=passthrough",
+            "--disable-extensions"
         ],
         ignoreHTTPSErrors: true
     });
@@ -72,7 +74,7 @@ export default async function middleware(req, res, next) {
         if (globals.DEV) {
             await screenCaptureChromium({
                 url: req.wappRequest.protocol + "://" + req.wappRequest.hostname + "/",
-                savePath: path.resolve(dirname, publicFolder, "assets", "video2.mp4"),
+                savePath: path.resolve(dirname, publicFolder, "assets", "video4.mp4"),
             })
         }
 

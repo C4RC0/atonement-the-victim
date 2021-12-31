@@ -8,6 +8,7 @@
     "private": true,
     "scripts": {
         "start": "wapplr-cli start packages/atonement-the-victim",
+        "clean": "wapplr-cli clean packages/atonement-the-victim",
         "build": "wapplr-cli build packages/atonement-the-victim"
     },
     "workspaces": [

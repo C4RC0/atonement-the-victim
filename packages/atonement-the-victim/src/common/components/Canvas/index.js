@@ -431,44 +431,45 @@ export default function Canvas(props) {
 
         function initControls() {
 
-            if (enableOrbitControls) {
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.target = target;
+            controls.update();
 
-                controls = new OrbitControls(camera, renderer.domElement);
-                controls.target = target;
-                controls.update();
+            if (!enableOrbitControls) {
 
                 controls.enableZoom = false;
                 controls.enablePan = false;
                 controls.enableDamping = false;
-                controls.minPolarAngle = Math.PI/2-0.5;
-                controls.maxPolarAngle = Math.PI/2+0.1;
-                controls.minAzimuthAngle = camera.rotation.y-4;
-                controls.maxAzimuthAngle = camera.rotation.y-2;
-
-                let wait;
-                const start = function () {
-                    if (wait) {
-                        clearTimeout(wait);
-                    }
-                    userCameraMoveing = 1;
-                };
-                const end = function () {
-                    if (wait) {
-                        clearTimeout(wait);
-                    }
-                    userCameraMoveing = 1;
-                    wait = setTimeout(function () {
-                        userCameraMoveing = 0;
-                    }, 100)
-                };
-                removeControlListeners = function () {
-                    controls.removeEventListener("start", start);
-                    controls.removeEventListener("end", end);
-                };
-                controls.addEventListener("start", start);
-                controls.addEventListener("end", end);
+                controls.minPolarAngle = Math.PI / 2 - 0.5;
+                controls.maxPolarAngle = Math.PI / 2 + 0.1;
+                controls.minAzimuthAngle = camera.rotation.y - 3.3;
+                controls.maxAzimuthAngle = camera.rotation.y - 3.05;
 
             }
+
+            let wait;
+            const start = function () {
+                if (wait) {
+                    clearTimeout(wait);
+                }
+                userCameraMoveing = 1;
+            };
+            const end = function () {
+                if (wait) {
+                    clearTimeout(wait);
+                }
+                userCameraMoveing = 1;
+                wait = setTimeout(function () {
+                    userCameraMoveing = 0;
+                }, 100)
+            };
+            removeControlListeners = function () {
+                controls.removeEventListener("start", start);
+                controls.removeEventListener("end", end);
+            };
+            controls.addEventListener("start", start);
+            controls.addEventListener("end", end);
+
         }
 
         function glow(object) {
