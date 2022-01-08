@@ -5,7 +5,6 @@ dist
 run
 !packages/atonement-the-victim/run/public/assets/icon_192x192.png
 !packages/atonement-the-victim/run/public/assets/icon_512x512.png
-!packages/atonement-the-victim/run/public/assets/ammo.wasm.wasm
 wapplr.json
 .DS_Store
 *.tgz
